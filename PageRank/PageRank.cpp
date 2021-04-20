@@ -15,6 +15,9 @@ typedef vector<Node_ID> Links;
 typedef map<Node_ID, Links> Page;
  vector<int>dgree;
  Page P;
+ typedef vector<double>Rank;
+ Rank New;
+ Rank Old;
  int max(unsigned short a, unsigned short b)
  {
 	 return a > b ? a : b;
@@ -44,12 +47,11 @@ int Init(const char* filename)
 //得到初始化矩阵
 void InitMatrix(int n,double teleport,double** M)
 {
-	
 	for (auto i : P)
 	{
 		for (auto j : i.second)
 		{
-			M[j][i.first] = teleport * (1.0 / dgree[i.first]);
+			M[j][i.first] = teleport * (Old[i.first] / dgree[i.first]);
 		}
 	}
 	for (int i = 0; i < n; i++)
@@ -60,6 +62,25 @@ void InitMatrix(int n,double teleport,double** M)
 		}
 	}
 	return ;
+}
+//计算PageRank
+void ComputeRank(int n,double teleport,double** M)
+{
+	New.resize(n, 0);
+	Old.resize(n,0);
+	//InitMatrix(n, teleport, M);
+	for (auto i:P)
+	{
+		for (auto j : i.second)
+		{
+			Old[j] = 1.0;
+			New[i.first] += teleport * (Old[j]/dgree[j]) + (1.0 / n);
+		}
+		Old[i.first] = New[i.first];
+	}
+
+
+	return;
 }
 int main()
 {
@@ -92,18 +113,9 @@ int main()
 	{
 		cout << dgree[i] << " ";
 	}
-	InitMatrix(count, teleport, M);
+	ComputeRank(count, teleport, M);
 
 	cout << endl;
-	cout << "the matrix:" << endl;
-	for (int i = 0; i < count; i++)
-	{
-		for (int j = 0; j < count; j++)
-		{
-			cout << M[i][j] << " ";
-		}
-		cout << endl;
-	}
 	
 	return 0;
 }

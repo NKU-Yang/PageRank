@@ -35,7 +35,7 @@ int Init(const char* filename)
 	}
 	input.close();
 	dgree.resize(maxID+1);
-	for (int i = 0; i < maxID; i++)
+	for (int i = 0; i < maxID+1; i++)
 	{
 		dgree[i]=P[i].size();
 	}
@@ -45,21 +45,18 @@ int Init(const char* filename)
 void InitMatrix(int n,double teleport,double** M)
 {
 	
+	for (auto i : P)
+	{
+		for (auto j : i.second)
+		{
+			M[j][i.first] = teleport * (1.0 / dgree[i.first]);
+		}
+	}
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < n; j++)
 		{
-			if (dgree[i] != 0)
-			{
-				double t1 = 1.0 / dgree[i];
-				double t2 = 1.0 / n;
-				M[j][i] = (double)(teleport * t1 + (1 - teleport) * t2);
-			}
-			else
-			{
-				double t = 1.0 / n;
-				M[j][i] = (double)((1 - teleport) * t);
-			}	
+			M[i][j] +=(1.0-teleport)*(1.0/n);
 		}
 	}
 	return ;
@@ -70,9 +67,17 @@ int main()
 	double teleport = 0.85;
 	int count = Init(filename);
 	double** M = new double* [count];
+
 	for (int i = 0; i < count; i++)
 	{
 		M[i] = new double[count];
+	}
+	for (int i = 0; i < count; i++)
+	{
+		for (int j = 0; j < count; j++)
+		{
+			M[i][j] = 0;
+		}
 	}
 	for (auto i : P)
 	{

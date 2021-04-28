@@ -8,8 +8,10 @@
 #include<time.h>
 #include <map>
 #include <stdio.h>
+#include<math.h>
 using namespace std;
 
+const double STOPLOSS =0.01;
 typedef unsigned short Node_ID;
 typedef vector<Node_ID> Links;
 typedef map<Node_ID, Links> Page;
@@ -25,14 +27,15 @@ typedef map<Node_ID, Links> Page;
  //得到初始链接和节点度数
 int Init(const char* filename)
 {
-	ifstream input(filename);
+	fstream input(filename,ios::in);
 	Node_ID from = 0; 
 	Node_ID to=0;
 	//Node_ID maxID = 0;
 
 	int maxID=0;
-	while (!input.eof() && (input >> from >> to))
+	while (!input.eof())
 	{
+		input >> from >> to;
 		P[to].push_back(from);
 		maxID = max(maxID, max(from, to));
 	}
@@ -44,47 +47,66 @@ int Init(const char* filename)
 	}
 	return maxID+1;
 }
-//得到初始化矩阵
-void InitMatrix(int n,double teleport,double** M)
-{
-	for (auto i : P)
-	{
-		for (auto j : i.second)
-		{
-			M[j][i.first] = teleport * (Old[i.first] / dgree[i.first]);
-		}
-	}
-	for (int i = 0; i < n; i++)
-	{
-		for (int j = 0; j < n; j++)
-		{
-			M[i][j] +=(1.0-teleport)*(1.0/n);
-		}
-	}
-	return ;
-}
+////得到初始化矩阵
+//void InitMatrix(int n,double teleport,double** M)
+//{
+//	for (auto i : P)
+//	{
+//		for (auto j : i.second)
+//		{
+//			M[j][i.first] = teleport * (Old[i.first] / dgree[i.first]);
+//		}
+//	}
+//	for (int i = 0; i < n; i++)
+//	{
+//		for (int j = 0; j < n; j++)
+//		{
+//			M[i][j] +=(1.0-teleport)*(1.0/n);
+//		}
+//	}
+//	return ;
+//}
 //计算PageRank
 void ComputeRank(int n,double teleport,double** M)
 {
 	New.resize(n, 0);
-	Old.resize(n,0);
-	//InitMatrix(n, teleport, M);
-	for (auto i:P)
-	{
-		for (auto j : i.second)
+	Old.resize(n,1);
+	double loss = 0.0;
+	do {
+		loss = 0.0;
+		for (auto i : P)
 		{
-			Old[j] = 1.0;
-			New[i.first] += teleport * (Old[j]/dgree[j]) + (1.0 / n);
+			New[i.first] = 0.0;
+			for (auto j : i.second)
+			{
+				New[i.first] += teleport * (Old[j] / dgree[j]) ;
+			}
+			New[i.first] += (1.0 / n);
 		}
-		Old[i.first] = New[i.first];
-	}
-
-
+		for (int i = 0; i < New.size(); i++)
+		{
+			double temp = New[i] - Old[i];
+			if (temp > 0)
+			{
+				loss += temp;
+			}
+			else
+			{
+				loss += -temp;
+			}
+		}
+		for (int i = 0; i < New.size(); i++)
+		{
+			Old[i] = New[i];
+		}
+		//cout << "curr loss:" << loss << endl;
+	} while (loss>STOPLOSS);
+	cout << "finale loss:" << loss << endl;
 	return;
 }
 int main()
 {
-	const char* filename = "Data.txt";
+	const char* filename = "WikiData.txt";
 	double teleport = 0.85;
 	int count = Init(filename);
 	double** M = new double* [count];
@@ -100,22 +122,13 @@ int main()
 			M[i][j] = 0;
 		}
 	}
+	ComputeRank(count, teleport, M);
+	ofstream out("result.txt");
 	for (auto i : P)
 	{
-		cout << i.first << " " << "Links:";
-		for (int j = 0; j < i.second.size(); j++)
-		{
-			cout << i.second[j];
-		}
-		cout << endl;
+		out << i.first <<"\t"<< New[i.first] << endl;
 	}
-	for (int i = 0; i < count; i++)
-	{
-		cout << dgree[i] << " ";
-	}
-	ComputeRank(count, teleport, M);
-
-	cout << endl;
+	out.close();
 	
 	return 0;
 }

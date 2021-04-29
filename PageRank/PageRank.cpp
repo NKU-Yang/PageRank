@@ -3,7 +3,6 @@
 #include<fstream>
 #include<algorithm>
 #include<vector>
-#include<list>
 #include<iomanip>
 #include<time.h>
 #include <map>
@@ -11,18 +10,22 @@
 #include<math.h>
 using namespace std;
 
-const double STOPLOSS = 1e-10;
+const double STOPLOSS = 1e-10;//精度
 typedef unsigned int Node_ID;
-typedef vector<Node_ID> Links;
-typedef map<Node_ID, Links> Page;
-vector<int>dgree;
-vector<int>out_dgree;
-Page P;
-Page P_out;
-typedef vector<double>Rank;
+typedef vector<Node_ID> Links;//邻接表的每一行
+typedef map<Node_ID, Links> Page;//邻接表
+vector<int>dgree;//入度
+vector<int>out_dgree;//出度
+Page P;//入度邻接表
+Page P_out;//出度邻接表
+typedef vector<double>Rank;//rank值数组，下标即为对应Node_ID
 Rank New;
 Rank Old;
 Node_ID maxID = 0;
+typedef map<Node_ID, double>Node_Score;//Node的最终score
+Node_Score node_score;
+typedef pair<Node_ID, double>PAIR;
+
 int max(unsigned short a, unsigned short b)
 {
 	return a > b ? a : b;
@@ -113,6 +116,33 @@ void ComputeRank(int n, double teleport)
 	res.close();
 	return;
 }
+
+bool cmp_by_value(const PAIR& lhs, const PAIR& rhs) {
+	return lhs.second > rhs.second;
+}
+struct CmpByValue {
+	bool operator()(const PAIR& lhs, const PAIR& rhs) {
+		return lhs.second > rhs.second;
+	}
+};
+
+void gettop100()
+{
+	for (int i = 0; i < New.size(); i++)
+	{
+		node_score[i] = New[i];
+	}
+	vector<PAIR>score_vec(node_score.begin(), node_score.end());
+	sort(score_vec.begin(), score_vec.end(), CmpByValue());
+	ofstream topres("top100.txt");
+	for (int i = 0; i < 100; i++)
+	{
+		topres << score_vec[i].first << "\t" << score_vec[i].second << endl;
+	}
+	topres.close();
+	return;
+}
+
 int main()
 {
 	const char* filename = "WikiData.txt";
@@ -126,7 +156,7 @@ int main()
 		out << i.first << "\t" << "out_dgree: " << out_dgree[i.first] << "\tin_dgree: " << dgree[i.first] << endl;
 	}
 	out.close();
-
+	gettop100();
 	return 0;
 }
 
